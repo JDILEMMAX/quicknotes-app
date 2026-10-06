@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickNotes</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <div class="header-container">
+        <h1>QuickNotes</h1>
+        <p>Capture, organize and persist your thoughts in real time.</p>
+      </div>
+    </header>
+
+    <main>
+      <!-- Section 1: Note Creation Form -->
+      <section class="card" aria-labelledby="form-heading">
+        <h2 id="form-heading">Add a note</h2>
+        <form id="note-form" novalidate>
+          <div class="form-row">
+            <div class="input-field">
+              <label for="note-input">Note Content</label>
+              <input
+                type="text"
+                id="note-input"
+                name="noteText"
+                placeholder="What do you want to remember?"
+                autocomplete="off"
+                required
+              >
+            </div>
+
+            <div class="select-field">
+              <label for="note-category">Category</label>
+              <select id="note-category" name="noteCategory">
+                <option value="personal">Personal</option>
+                <option value="work">Work</option>
+                <option value="study">Study</option>
+              </select>
+            </div>
+
+            <div class="button-field">
+              <button type="submit" id="add-btn">Add Note</button>
+            </div>
+          </div>
+        </form>
+        <p id="error-message" role="alert" aria-live="assertive"></p>
+      </section>
+
+      <!-- Section 2: Note List & Search Filter -->
+      <section class="card" aria-labelledby="notes-heading">
+        <h2 id="notes-heading">Your notes</h2>
+
+        <div class="filter-controls">
+          <div class="search-field">
+            <label for="search-input">Search notes</label>
+            <input
+              type="text"
+              id="search-input"
+              placeholder="Search by keywords..."
+              autocomplete="off"
+            >
+          </div>
+        </div>
+
+        <div class="list-header">
+          <p id="note-count" aria-live="polite">You have no notes yet.</p>
+          <button id="clear-all-btn" type="button" class="btn-secondary">Clear All Notes</button>
+        </div>
+
+        <ul id="notes-list" aria-label="Saved notes list"></ul>
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; 2026 QuickNotes System. Engineered by Jesse Vincent.</p>
+    </footer>
+  </body>
+</html>

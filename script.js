@@ -1,52 +1,94 @@
 /**
  * Project 1: Build QuickNotes
- * Task 4: Validation, Deletion & Counter
- * Engineer: Jesse Vincent
+ * Task 5: Persistence, Live Search & Bulk Operations
+ * Lead Systems Architect: Jesse Vincent
+ * Repository: quicknotes-app
  */
 
 // 1. DOM Element Selections
 const noteForm = document.querySelector("#note-form");
 const noteInput = document.querySelector("#note-input");
 const noteCategory = document.querySelector("#note-category");
-const notesList = document.querySelector("#notes-list");
 const errorMessage = document.querySelector("#error-message");
+const searchInput = document.querySelector("#search-input");
 const noteCount = document.querySelector("#note-count");
+const notesList = document.querySelector("#notes-list");
+const clearAllBtn = document.querySelector("#clear-all-btn");
 
-// 2. Application State
-let notes = [];
+// 2. Storage Constants & Application State
+const STORAGE_KEY = "quicknotes_app_data";
+let notes = loadNotes();
 
 /**
- * 3. updateCountDisplay()
- * Formats note metrics for zero, singular and plural quantities.
+ * 3. loadNotes()
+ * Hydrates state from browser localStorage or returns an empty collection.
  */
-function updateCountDisplay() {
-  if (notes.length === 0) {
-    noteCount.textContent = "You have no notes yet.";
-  } else if (notes.length === 1) {
-    noteCount.textContent = "You have 1 note.";
-  } else {
-    noteCount.textContent = `You have ${notes.length} notes.`;
+function loadNotes() {
+  try {
+    const rawData = localStorage.getItem(STORAGE_KEY);
+    return rawData ? JSON.parse(rawData) : [];
+  } catch (error) {
+    console.error("Failed to parse stored notes:", error);
+    return [];
   }
 }
 
 /**
- * 4. deleteNote(id)
- * Filters out targeted note by unique ID and refreshes the interface.
+ * 4. saveNotes()
+ * Persists active state array to browser localStorage as serialized JSON.
  */
-function deleteNote(id) {
-  notes = notes.filter((note) => note.id !== id);
-  render();
+function saveNotes() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
 }
 
 /**
- * 5. render()
- * Rebuilds the notes list and synchronises counter indicators.
+ * 5. updateCountDisplay(displayCount)
+ * Updates status text handling zero, singular and plural forms.
  */
-function render() {
-  notesList.innerHTML = "";
-  updateCountDisplay();
+function updateCountDisplay(displayCount) {
+  if (displayCount === 0) {
+    noteCount.textContent = "You have no notes yet.";
+  } else if (displayCount === 1) {
+    noteCount.textContent = "You have 1 note.";
+  } else {
+    noteCount.textContent = `You have ${displayCount} notes.`;
+  }
+}
 
-  notes.forEach((note) => {
+/**
+ * 6. render(filterQuery)
+ * Reconstructs list items safely using DOM nodes and textContent.
+ * Supports keyword filtering and informative empty states.
+ */
+function render(filterQuery = "") {
+  notesList.innerHTML = "";
+  const query = filterQuery.trim().toLowerCase();
+
+  const filteredNotes = notes.filter((note) => {
+    return note.text.toLowerCase().includes(query);
+  });
+
+  if (notes.length === 0) {
+    updateCountDisplay(0);
+    const emptyLi = document.createElement("li");
+    emptyLi.classList.add("empty-state");
+    emptyLi.textContent = "Your workspace is clear. Add your first note above.";
+    notesList.appendChild(emptyLi);
+    return;
+  }
+
+  if (filteredNotes.length === 0) {
+    updateCountDisplay(0);
+    const noMatchLi = document.createElement("li");
+    noMatchLi.classList.add("empty-state");
+    noMatchLi.textContent = "No notes match your search.";
+    notesList.appendChild(noMatchLi);
+    return;
+  }
+
+  updateCountDisplay(filteredNotes.length);
+
+  filteredNotes.forEach((note) => {
     const li = document.createElement("li");
     li.classList.add("note-item", `category-${note.category}`);
 
@@ -77,6 +119,7 @@ function render() {
     deleteBtn.textContent = "Delete";
     deleteBtn.classList.add("delete-btn");
     deleteBtn.setAttribute("type", "button");
+    deleteBtn.setAttribute("aria-label", `Delete note: ${note.text}`);
     deleteBtn.addEventListener("click", () => deleteNote(note.id));
 
     li.appendChild(bodyDiv);
@@ -86,8 +129,8 @@ function render() {
 }
 
 /**
- * 6. addNote(text, category)
- * Enforces validation boundaries before accepting note creation.
+ * 7. addNote(text, category)
+ * Validates text bounds, appends record to state and persists to storage.
  */
 function addNote(text, category) {
   const cleaned = text.trim();
@@ -102,7 +145,6 @@ function addNote(text, category) {
     return false;
   }
 
-  // Clear active validation error
   errorMessage.textContent = "";
 
   const newNote = {
@@ -119,11 +161,40 @@ function addNote(text, category) {
   };
 
   notes.unshift(newNote);
-  render();
+  saveNotes();
+  render(searchInput.value);
   return true;
 }
 
-// 7. Event Listener
+/**
+ * 8. deleteNote(id)
+ * Removes targeted note by ID, persists to storage and updates UI.
+ */
+function deleteNote(id) {
+  notes = notes.filter((note) => note.id !== id);
+  saveNotes();
+  render(searchInput.value);
+}
+
+/**
+ * 9. clearAllNotes() (Bonus Objective)
+ * Prompts confirmation before clearing state and local storage.
+ */
+function clearAllNotes() {
+  if (notes.length === 0) return;
+
+  const confirmed = confirm("Delete all notes?");
+  if (confirmed) {
+    notes = [];
+    saveNotes();
+    render();
+  }
+}
+
+// ==========================================
+// EVENT LISTENERS
+// ==========================================
+
 noteForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const added = addNote(noteInput.value, noteCategory.value);
@@ -133,5 +204,11 @@ noteForm.addEventListener("submit", (event) => {
   }
 });
 
-// Initial render
+searchInput.addEventListener("input", () => {
+  render(searchInput.value);
+});
+
+clearAllBtn.addEventListener("click", clearAllNotes);
+
+// Initial application render on DOM ready
 render();

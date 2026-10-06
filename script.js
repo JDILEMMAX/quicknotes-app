@@ -1,6 +1,6 @@
 /**
  * Project 1: Build QuickNotes
- * Task 3: Core Add & Display Engine
+ * Task 4: Validation, Deletion & Counter
  * Engineer: Jesse Vincent
  */
 
@@ -9,16 +9,42 @@ const noteForm = document.querySelector("#note-form");
 const noteInput = document.querySelector("#note-input");
 const noteCategory = document.querySelector("#note-category");
 const notesList = document.querySelector("#notes-list");
+const errorMessage = document.querySelector("#error-message");
+const noteCount = document.querySelector("#note-count");
 
 // 2. Application State
 let notes = [];
 
 /**
- * 3. render()
- * Clears and rebuilds the notes list using safe DOM creation methods.
+ * 3. updateCountDisplay()
+ * Formats note metrics for zero, singular and plural quantities.
+ */
+function updateCountDisplay() {
+  if (notes.length === 0) {
+    noteCount.textContent = "You have no notes yet.";
+  } else if (notes.length === 1) {
+    noteCount.textContent = "You have 1 note.";
+  } else {
+    noteCount.textContent = `You have ${notes.length} notes.`;
+  }
+}
+
+/**
+ * 4. deleteNote(id)
+ * Filters out targeted note by unique ID and refreshes the interface.
+ */
+function deleteNote(id) {
+  notes = notes.filter((note) => note.id !== id);
+  render();
+}
+
+/**
+ * 5. render()
+ * Rebuilds the notes list and synchronises counter indicators.
  */
 function render() {
   notesList.innerHTML = "";
+  updateCountDisplay();
 
   notes.forEach((note) => {
     const li = document.createElement("li");
@@ -51,6 +77,7 @@ function render() {
     deleteBtn.textContent = "Delete";
     deleteBtn.classList.add("delete-btn");
     deleteBtn.setAttribute("type", "button");
+    deleteBtn.addEventListener("click", () => deleteNote(note.id));
 
     li.appendChild(bodyDiv);
     li.appendChild(deleteBtn);
@@ -59,13 +86,28 @@ function render() {
 }
 
 /**
- * 4. addNote(text, category)
- * Constructs a structured note object and inserts it into the state array.
+ * 6. addNote(text, category)
+ * Enforces validation boundaries before accepting note creation.
  */
 function addNote(text, category) {
+  const cleaned = text.trim();
+
+  if (cleaned === "") {
+    errorMessage.textContent = "Please type a note first.";
+    return false;
+  }
+
+  if (cleaned.length > 200) {
+    errorMessage.textContent = "Notes must be 200 characters or fewer.";
+    return false;
+  }
+
+  // Clear active validation error
+  errorMessage.textContent = "";
+
   const newNote = {
     id: Date.now(),
-    text: text.trim(),
+    text: cleaned,
     category: category,
     createdAt: new Date().toLocaleString([], {
       month: "short",
@@ -78,14 +120,14 @@ function addNote(text, category) {
 
   notes.unshift(newNote);
   render();
+  return true;
 }
 
-// 5. Event Listener
+// 7. Event Listener
 noteForm.addEventListener("submit", (event) => {
   event.preventDefault();
-  const text = noteInput.value;
-  if (text.trim() !== "") {
-    addNote(text, noteCategory.value);
+  const added = addNote(noteInput.value, noteCategory.value);
+  if (added) {
     noteInput.value = "";
     noteInput.focus();
   }
